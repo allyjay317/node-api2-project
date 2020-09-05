@@ -56,11 +56,16 @@ server.post('/api/posts/:id/comments', (req, res) => {
     res.status(400).json({ errorMessage: "Please provide text for the comment." })
   }
 })
-server.get('api/posts', (req, res) => {
-  // - If there's an error in retrieving the _posts_ from the database:
-  // - cancel the request.
-  // - respond with HTTP status code `500`.
-  // - return the following JSON object: `{ error: "The posts information could not be retrieved." }`.
+server.get('/api/posts', (req, res) => {
+  const body = req.body
+  db.find()
+    .then(result => {
+      console.log(result)
+      res.status(200).json(result)
+    })
+    .catch(err => {
+      res.status(500).json({ error: "The posts information could not be retrieved." })
+    })
 })
 server.get('/api/posts/:id', (req, res) => {
   //   - If the _post_ with the specified `id` is not found:
