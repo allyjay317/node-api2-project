@@ -30,25 +30,31 @@ server.post('/api/posts/:id/comments', (req, res) => {
     //comment has all neccecary values
     db.findById(id)
       .then(result => {
-        //just in case of post_id not being included for some strange reason
-        body.post_id = id
-        db.insertComment(body)
-          .then(done => {
-            //comment inserted successfully, find and return newly created comment
-            db.findCommentById(done.id)
-              .then(ret => {
-                //comment found successfully, return
-                res.status(201).json(ret[0])
-              })
-          })
-          .catch(err => {
-            //error while saving comment or fetching newly created comment
-            res.status(500).json({ error: "There was an error while saving the comment to the database" })
-          })
+        if (result.length === 0) {
+          res.status(404).json({ message: 'The post with the specified ID does not exist' })
+        }
+        else {
+          //just in case of post_id not being included for some strange reason
+          body.post_id = id
+          db.insertComment(body)
+            .then(done => {
+              //comment inserted successfully, find and return newly created comment
+              db.findCommentById(done.id)
+                .then(ret => {
+                  if (ret.length === 0) {
+                    throw new Error('Something went wrong')
+                  }
+                  else {
+                    //comment found successfully, return
+                    res.status(201).json(ret[0])
+                  }
+                })
+            })
+        }
       })
       .catch(err => {
-        //error when searching for post
-        res.status(404).json({ message: "The post with the specified ID does not exist" })
+        //error while saving comment or fetching newly created comment
+        res.status(500).json({ error: "There was an error while saving the comment to the database" })
       })
   }
   else {
@@ -57,7 +63,6 @@ server.post('/api/posts/:id/comments', (req, res) => {
   }
 })
 server.get('/api/posts', (req, res) => {
-  const body = req.body
   db.find()
     .then(result => {
       console.log(result)
@@ -68,6 +73,17 @@ server.get('/api/posts', (req, res) => {
     })
 })
 server.get('/api/posts/:id', (req, res) => {
+  const { id } = req.params
+  db.findById(id)
+    .then(result => {
+      if (result.length === 0) {
+        res.status(404).json({ message: "The post with the specified ID does not exist." })
+      }
+      res.status(200).json(result)
+    })
+    .catch(err => {
+      res.status(500).json({ error: "The post information could not be retrieved." })
+    })
   //   - If the _post_ with the specified `id` is not found:
 
   //   - return HTTP status code `404` (Not Found).
