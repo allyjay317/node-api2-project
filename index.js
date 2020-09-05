@@ -2,14 +2,23 @@ const PORT = 5000
 
 const express = require('express')
 const server = express()
+const db = require('./data/db')
 server.use(express.json())
 
 server.post('/api/posts', (req, res) => {
-  //   - If the request body is missing the `title` or `contents` property:
-
-  //   - cancel the request.
-  //   - respond with HTTP status code `400` (Bad Request).
-  //   - return the following JSON response: `{ errorMessage: "Please provide title and contents for the post." }`.
+  const body = req.body
+  if (body.title && body.contents) {
+    try {
+      const newPost = db.insert(req.body)
+      res.status(201).json(newPost)
+    }
+    catch (err) {
+      res.status(500).json({ error: "There was an error while saving the post to the database" })
+    }
+  }
+  else {
+    res.status(400).json({ errorMessage: "Please provide title and contents for the post." })
+  }
 
   // - If the information about the _post_ is valid:
 
