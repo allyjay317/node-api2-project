@@ -106,15 +106,22 @@ server.get('/api/posts/:id/comments', (req, res) => {
     })
 })
 server.delete('/api/posts/:id', (req, res) => {
-  //   - If the _post_ with the specified `id` is not found:
-
-  //   - return HTTP status code `404` (Not Found).
-  //   - return the following JSON object: `{ message: "The post with the specified ID does not exist." }`.
-
-  // - If there's an error in removing the _post_ from the database:
-  //   - cancel the request.
-  //   - respond with HTTP status code `500`.
-  //   - return the following JSON object: `{ error: "The post could not be removed" }`.
+  const { id } = req.params
+  db.findById(id)
+    .then(result => {
+      if (result.length === 0) {
+        res.status(404).json({ message: "The post with the specified ID does not exist." })
+      }
+      else {
+        db.remove(id)
+          .then(deleted => {
+            res.status(204).end()
+          })
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ error: "The post could not be removed" })
+    })
 })
 server.put('/api/posts/:id', (req, res) => {
   //   - If the _post_ with the specified `id` is not found:
