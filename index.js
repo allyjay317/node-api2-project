@@ -8,51 +8,53 @@ server.use(express.json())
 server.post('/api/posts', (req, res) => {
   const body = req.body
   if (body.title && body.contents) {
-    try {
-      const newPost = db.insert(req.body)
-      res.status(201).json(newPost)
-    }
-    catch (err) {
-      res.status(500).json({ error: "There was an error while saving the post to the database" })
-    }
+    db.insert(req.body)
+      .then(result => {
+        db.findById(result.id)
+          .then(createdPost => {
+            res.status(201).json(createdPost[0])
+          })
+      })
+      .catch(err => {
+        res.status(500).json({ error: "There was an error while saving the post to the database" })
+      })
   }
   else {
     res.status(400).json({ errorMessage: "Please provide title and contents for the post." })
   }
-
-  // - If the information about the _post_ is valid:
-
-  //   - save the new _post_ the the database.
-  //   - return HTTP status code `201` (Created).
-  //   - return the newly created _post_.
-
-  // - If there's an error while saving the _post_:
-  //   - cancel the request.
-  //   - respond with HTTP status code `500` (Server Error).
-  //   - return the following JSON object: `{ error: "There was an error while saving the post to the database" }`.
 })
-server.post('/api/posts:id/comments', (req, res) => {
-  //   - If the _post_ with the specified `id` is not found:
-
-  //   - return HTTP status code `404` (Not Found).
-  //   - return the following JSON object: `{ message: "The post with the specified ID does not exist." }`.
-
-  // - If the request body is missing the `text` property:
-
-  //   - cancel the request.
-  //   - respond with HTTP status code `400` (Bad Request).
-  //   - return the following JSON response: `{ errorMessage: "Please provide text for the comment." }`.
-
-  // - If the information about the _comment_ is valid:
-
-  //   - save the new _comment_ the the database.
-  //   - return HTTP status code `201` (Created).
-  //   - return the newly created _comment_.
-
-  // - If there's an error while saving the _comment_:
-  //   - cancel the request.
-  //   - respond with HTTP status code `500` (Server Error).
-  //   - return the following JSON object: `{ error: "There was an error while saving the comment to the database" }`.
+server.post('/api/posts/:id/comments', (req, res) => {
+  const body = req.body
+  const { id } = req.params
+  if (body.text) {
+    //comment has all neccecary values
+    db.findById(id)
+      .then(result => {
+        //just in case of post_id not being included for some strange reason
+        body.post_id = id
+        db.insertComment(body)
+          .then(done => {
+            //comment inserted successfully, find and return newly created comment
+            db.findCommentById(done.id)
+              .then(ret => {
+                //comment found successfully, return
+                res.status(201).json(ret[0])
+              })
+          })
+          .catch(err => {
+            //error while saving comment or fetching newly created comment
+            res.status(500).json({ error: "There was an error while saving the comment to the database" })
+          })
+      })
+      .catch(err => {
+        //error when searching for post
+        res.status(404).json({ message: "The post with the specified ID does not exist" })
+      })
+  }
+  else {
+    //comment is missing values
+    res.status(400).json({ errorMessage: "Please provide text for the comment." })
+  }
 })
 server.get('api/posts', (req, res) => {
   // - If there's an error in retrieving the _posts_ from the database:
