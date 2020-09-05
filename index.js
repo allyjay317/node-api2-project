@@ -88,15 +88,22 @@ server.get('/api/posts/:id', (req, res) => {
     })
 })
 server.get('/api/posts/:id/comments', (req, res) => {
-  //   - If the _post_ with the specified `id` is not found:
-
-  //   - return HTTP status code `404` (Not Found).
-  //   - return the following JSON object: `{ message: "The post with the specified ID does not exist." }`.
-
-  // - If there's an error in retrieving the _comments_ from the database:
-  //   - cancel the request.
-  //   - respond with HTTP status code `500`.
-  //   - return the following JSON object: `{ error: "The comments information could not be retrieved." }`.
+  const { id } = req.params
+  db.findById(id)
+    .then(result => {
+      if (result.length === 0) {
+        res.status(404).json({ message: "The post with the specified ID does not exist." })
+      }
+      else {
+        db.findPostComments(id)
+          .then(postComments => {
+            res.status(200).json(postComments)
+          })
+      }
+    })
+    .catch(err => {
+      res.status(500).json({ error: "The comments information could not be retrieved." })
+    })
 })
 server.delete('/api/posts/:id', (req, res) => {
   //   - If the _post_ with the specified `id` is not found:
